@@ -120,47 +120,7 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
 
         elif self.path == '/reload':
 
-            with open(APP_FILE, 'w') as f:
-                f.write(prog_vars['code'])
-
-            # Rebuild
-            completed = subprocess.run(['make'],
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-
-            if completed.returncode == 0:
-                # Kill the running process
-                global app_process
-                if app_process:
-                    app_process.terminate()
-                    app_process.wait()
-
-
-                # Find the vars we are interested in syncing
-
-                # Always sync fps
-                sync_vars = ['fps']
-                with open(APP_FILE, 'r') as f:
-                    for line in f.readlines():
-                        line = line.strip()
-                        if line.startswith('DEFVAR('):
-                            line = line[7:].split(')')[0]
-                            parts = line.split(',')
-                            var_type = parts[0].strip()
-                            var_name = parts[1].strip()
-                            sync_vars.append(var_name)
-
-                print('sync vars: ' + str(sync_vars))
-
-
-                # Redeploy
-                app_process = subprocess.Popen(['./app'],
-                                                   stdin=subprocess.PIPE)
-
-                # Start the app with the set of current vars
-                send_var_block({k:v for (k,v) in prog_vars.items() if k in sync_vars})
-
-
+            completed = reload_app()
             self.reply({'returncode': completed.returncode,
                         'stdout': str(completed.stdout, 'UTF-8'),
                         'stderr': str(completed.stderr, 'UTF-8')
@@ -206,7 +166,55 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
 httpd = http.server.HTTPServer(('', PORT), RequestHandler)
 
 
+def reload_app():
+
+    with open(APP_FILE, 'w') as f:
+        f.write(prog_vars['code'])
+
+    # Rebuild
+    completed = subprocess.run(['make'],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+
+    if completed.returncode == 0:
+        # Kill the running process
+        global app_process
+        if app_process:
+            app_process.terminate()
+            app_process.wait()
+
+
+        # Find the vars we are interested in syncing
+
+        # Always sync fps
+        sync_vars = ['fps']
+        with open(APP_FILE, 'r') as f:
+            for line in f.readlines():
+                line = line.strip()
+                if line.startswith('DEFVAR('):
+                    line = line[7:].split(')')[0]
+                    parts = line.split(',')
+                    var_type = parts[0].strip()
+                    var_name = parts[1].strip()
+                    sync_vars.append(var_name)
+
+        print('sync vars: ' + str(sync_vars))
+
+
+        # Redeploy
+        app_process = subprocess.Popen(['./app'],
+                                       stdin=subprocess.PIPE)
+
+        # Start the app with the set of current vars
+        send_var_block({k:v for (k,v) in prog_vars.items() if k in sync_vars})
+
+    return completed
+
+
+
 load_vars()
+
+reload_app()
 
 # Todo: propagate sync_vars back to here
 # Use an 'order token' var to ensure all sent messages have been

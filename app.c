@@ -17,5 +17,5 @@ void init()
 void work(float dt)
 {
     printf("position: %f velocity: %f haha2: %d\n", position, velocity, haha2);
-  printf("Red: %d Green: %d Blue: %d\n", col.r, col.g, col.b);
+  printf("Red: %d! Green: %d Blue: %d\n", col.r, col.g, col.b);
 }
