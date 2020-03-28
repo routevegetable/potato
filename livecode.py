@@ -148,7 +148,6 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
                             parts = line.split(',')
                             var_type = parts[0].strip()
                             var_name = parts[1].strip()
-                            var_def = parts[2].strip()
                             sync_vars.append(var_name)
 
                 print('sync vars: ' + str(sync_vars))

@@ -48,14 +48,15 @@ static void s_string_decoder(void *target, char *new_value)
     if(*target_s) free(*target_s);
     *target_s = strdup(new_value);
 }
+
 static void s_color_decoder(void *target, char *new_value)
 {
-    color_t **target_c = target;
+    color_t *target_c = target;
 
     int cint = atoi(new_value);
-    (*target_c)->r = (cint >> 0) & 0xFF;
-    (*target_c)->g = (cint >> 8) & 0xFF;
-    (*target_c)->b = (cint >> 16) & 0xFF;
+    target_c->r = (cint >> 0) & 0xFF;
+    target_c->g = (cint >> 8) & 0xFF;
+    target_c->b = (cint >> 16) & 0xFF;
 }
 
 void __var_set_ptr(char *name, char *type, void *ptr)
@@ -144,7 +145,7 @@ static void s_handle_commands(bool block)
     }
 }
 
-DEFVAR(float, fps, 3);
+DEFVAR(float, fps);
 
 
 static long s_get_time_ms(void)

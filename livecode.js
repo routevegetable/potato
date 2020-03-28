@@ -101,6 +101,7 @@ function addWidgetToDOM(widget) {
     putVar(widget.name, widgetType.get(widget))
   })
 
+
   widget.element.querySelector('.delete-widget').addEventListener('click', () => {
     widgets = widgets.filter(w => w != widget)
     widget.element.remove()
@@ -239,5 +240,47 @@ widgetTypes = {
       obj.element.querySelector('input').value = value
       obj.element.querySelector('span.value').innerText = obj.element.querySelector('input').value
     }
+  },
+  'Color Picker': {
+    init: (parent, obj) => {
+      if(!obj.hasOwnProperty('configured')) {
+        obj.min = parseFloat(window.prompt('Min'))
+        obj.max = parseFloat(window.prompt('Max'))
+        obj.configured = true
+      }
+      var html = `
+<header><button class='delete-widget'>X</button> ${obj.name}:</header>
+<input class="jscolor {onFineChange: \'jsColorUpdate(this)\'}" value="ab2567">`
+      var el = document.createElement('div')
+      el.className = "color-picker widget"
+      el.innerHTML = html
+      parent.appendChild(el)
+      window.jscolor.installByClassName('jscolor');
+      el.querySelector('.jscolor').jscolor.widget = obj
+      return el
+    },
+    get: (obj) => {
+      var input = obj.element.querySelector('input')
+      var bigint = parseInt(input.jscolor.toHEXString().slice(1,7), 16)
+      var r = (bigint >> 16) & 255;
+      var g = (bigint >> 8) & 255;
+      var b = bigint & 255;
+      return r | (g << 8) | (b << 16)
+    },
+    set: (obj, value) => {
+
+      var input = obj.element.querySelector('input')
+      var bigInt = parseInt(input.jscolor.toHEXString().slice(1,7), 16)
+      var r = value & 0xFF;
+      var g = (value >> 8) & 0xFF;
+      var b = (value >> 16) & 0xFF;
+      input.jscolor.fromRGB(r,g,b)
+    }
   }
+}
+
+function jsColorUpdate(jscolor) {
+  var widget = jscolor.widget
+  var widgetType = widgetTypes[widget.type]
+  putVar(widget.name, widgetType.get(widget))
 }

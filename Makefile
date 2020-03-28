@@ -1,2 +1,2 @@
 app: kernel.h kernel.c app.c
-	gcc kernel.c app.c -o app
+	gcc -Og -g3 kernel.c app.c -o app

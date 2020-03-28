@@ -3,11 +3,10 @@
 
 
 /* Live Coding Variables */
-DEFVAR(float, position, 0);
-DEFVAR(float, velocity, 0);
-DEFVAR(int, haha2, 0);
-
-
+DEFVAR(float, position);
+DEFVAR(float, velocity);
+DEFVAR(int, haha2);
+DEFVAR(color_t, col);
 
 
 void init()
@@ -17,5 +16,6 @@ void init()
 
 void work(float dt)
 {
-    printf("dt: %f position: %f velocity: %f haha: %d\n", dt, position, velocity, haha2);
+    printf("position: %f velocity: %f haha2: %d\n", position, velocity, haha2);
+  printf("Red: %d Green: %d Blue: %d\n", col.r, col.g, col.b);
 }
