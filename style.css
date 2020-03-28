@@ -1,0 +1,175 @@
+body {
+    font-family: Helvetica;
+    overflow:auto;
+}
+
+
+#main-container {
+    position:absolute;
+    left:0;
+    bottom:0;
+    width:100%;
+    top:0;
+    background: rgb(178,175,237);
+    background: linear-gradient(0deg, rgba(178,175,237,1) 0%, rgba(100,100,233,1) 20%, rgba(0,212,255,1) 95%);
+    overflow:auto;
+}
+
+#main-container > header {
+    padding:10px;
+    background-color:  rgba(255,255,255,0.8);
+    border-bottom: 1px solid black;
+    overflow:auto;
+}
+#main-container > header > h1 {
+    display:inline-block;
+    margin:0px;
+    margin-right:0.5in;
+    vertical-align:middle;
+}
+
+
+#buttons {
+    //margin:0.05in;
+    padding:0in;
+    //background-color: rgba(255,255,255,0.7);
+    //border-radius: 0.1in;
+    display:inline-block;
+    vertical-align:middle;
+}
+
+#buttons > button {
+    //background-color: rgba(128,128,128,1);
+    //font-weight:bold;
+    //border-radius: 0.1in;
+    margin: 0.02in;
+    padding:0.1in;
+    //border: 0px;
+    //color: rgba(0,212,255,1);
+    //color:white;
+    vertical-align:middle;
+    height:100%;
+}
+
+#buttons > select {
+    height:100%;
+    margin: 0.02in;
+    margin-left:0.1in;
+    padding: 0.1in;
+    vertical-align:middle;
+}
+
+
+#code-page {
+    overflow:auto;
+    text-align:center;
+}
+
+// hmmmmblah
+.layout-box {
+    margin:0;
+    padding:0;
+    border:0;
+    outline:0;
+
+    display: inline-block;
+    width:100%;
+    text-align:left;
+}
+
+#widgets {
+    margin:0.05in;
+    padding:0in;
+    background-color: rgba(255,255,255,0.7);
+    //border-radius: 0.1in;
+    overflow:auto;
+}
+
+.widget {
+    display:inline-block;
+    border: 1px solid black;
+    border-radius: 0.1in;
+    padding: 0.1in;
+    margin: 0.1in;
+}
+
+
+#widgets > header {
+    border-bottom: 1px solid black;
+    padding-left: 10px;
+}
+
+#widgets > header > button {
+    margin: 0.02in;
+    //padding:0.1in;
+    //font-weight: bold;
+
+}
+
+#widgets > header > select {
+    margin: 0.02in;
+    //padding:0.1in;
+    //font-weight: bold;
+}
+
+
+#widgets span.vertical-thing {
+    display: inline-block;
+    //height:3in;
+    vertical-align:top;
+    line-height:normal;
+}
+
+#var-table {
+    display: inline-block;
+    padding: 0.1in;
+    height: 4in;
+    width: 20%;
+    //background-color:yellow;
+    overflow-y: scroll;
+}
+
+.var-table-row {
+    border-bottom: 1px solid white;
+    margin:0.1in;
+}
+
+.var-delete-button {
+    margin:0.05in;
+    //background-color:red;
+    //border: 0;
+}
+
+.var-add-container {
+    text-align:center;
+    border:0;
+    padding:0;
+}
+
+
+.var-table-name-cell {
+
+}
+
+.var-table-value-cell {
+
+}
+
+
+#code-text {
+    background-color:white;
+    margin:0.05in;
+    padding:0.1in;
+    //border-radius: 0.1in;
+}
+
+#code-output {
+    background-color:black;
+    color: #DDD;
+    font-family: monospace;
+    height:2in;
+    overflow-y:scroll;
+    margin:0.05in;
+    padding:0.1in;
+    //border-radius: 0.1in;
+}
