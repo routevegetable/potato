@@ -16,6 +16,6 @@ void init()
 
 void work(float dt)
 {
-    printf("dt: %f position: %f velocity: %f haha: %d\n", dt, position, velocity, haha2);
-  printf("color: %f\n", color.r);
+  	printf("dt: %f position: %f velocity: %f haha: %d\n", dt, position, velocity, haha2);
+  	printf("color: %f\n", color.r);
 }
