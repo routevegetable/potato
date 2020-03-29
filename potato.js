@@ -57,15 +57,15 @@ async function beginUploadCode() {
 
   appendCodeOutput('Uploaded', 'green')
 
-  reloadButton.disabled = false
-  saveButton.disabled = false
+  //reloadButton.disabled = false
+  //saveButton.disabled = false
 }
 
 
 // Schedule an upload
 function scheduleUpload() {
-  reloadButton.disabled = true
-  saveButton.disabled = true
+  //reloadButton.disabled = true
+  //saveButton.disabled = true
 
   // Clear any code upload timer we have
   if(uploadTimeout != null) clearTimeout(uploadTimeout)
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
     appendCodeOutput('Reloading...', 'aqua')
     var resp = await fetch('/reload')
     var json = await resp.json()
-    reloadButton.disabled = true
+    //reloadButton.disabled = true
 
     appendCodeOutput(json.stdout, 'gray')
     appendCodeOutput(json.stderr, 'red')
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
   saveButton.addEventListener('click', async function(){
     appendCodeOutput('Saved', 'green')
     await fetch('/save')
-    saveButton.disabled = true
+    //saveButton.disabled = true
   })
 
   varAddButton.addEventListener('click', () => {

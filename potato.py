@@ -18,9 +18,13 @@ prog_vars = {}
 # gleaned from parsing app.c
 sync_vars = []
 
+# C file that app lives in
 APP_FILE='app.c'
+
+# Persistent state lives here
 VAR_FILE='vars.json'
 
+# Handle for the running app, if it is indeed running
 app_process = None
 
 
@@ -134,8 +138,6 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
 
         if self.path.startswith('/vars/'):
 
-            import pdb
-            #pdb.set_trace()
             # Setting a var
             parts = self.path.split('?')
             var_name = parts[0].split('/')[2]
@@ -167,6 +169,7 @@ httpd = http.server.HTTPServer(('', PORT), RequestHandler)
 
 
 def reload_app():
+    global sync_vars
 
     with open(APP_FILE, 'w') as f:
         f.write(prog_vars['code'])
@@ -219,7 +222,7 @@ reload_app()
 # Todo: propagate sync_vars back to here
 # Use an 'order token' var to ensure all sent messages have been
 # processed.
-# This should be a long defined in kernel.c
+# This should be a long defined in potato.c
 # Use in-band messaging on stdout
 # Use select here to poll the network socket and the app process.
 # Collect log data in a circular buffer.

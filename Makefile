@@ -1,2 +1,2 @@
-app: kernel.h kernel.c app.c
-	gcc -Og -g3 kernel.c app.c -o app
+app: potato.h potato.c app.c
+	gcc -Og -g3 potato.c app.c -o app
