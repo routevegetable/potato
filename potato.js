@@ -95,7 +95,11 @@ async function beginDownloadCode() {
 
 function addWidgetToDOM(widget) {
   var widgetType = widgetTypes[widget.type]
-  widget.element = widgetType.init(document.getElementById('widgets'), widget)
+  widget.element = widgetType.createElement()
+  document.getElementById('widgets').appendChild(widget.element)
+
+  // Post-add initialization
+  widgetType.prepare(widget)
 
   widget.element.addEventListener('input', () => {
     putVar(widget.name, widgetType.get(widget))
@@ -214,24 +218,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
 widgetTypes = {
   'Float Slider': {
-    init: (parent, obj) => {
-      if(!obj.hasOwnProperty('configured')) {
-        obj.min = parseFloat(window.prompt('Min'))
-        obj.max = parseFloat(window.prompt('Max'))
-        obj.configured = true
-      }
+    createElement: () => {
       var html = `
-<header><button class='delete-widget'>X</button> ${obj.name}:<span class="value">?</span></header>
-<input type="range" min="${obj.min}" max="${obj.max}">`
+<header><button class='delete-widget'>X</button> <span class="name"></span>:<span class="value">?</span></header>
+<input type="range">`
       var el = document.createElement('div')
       el.className = "float-slider widget"
       el.innerHTML = html
-      parent.appendChild(el)
       el.addEventListener('input', () => {
         el.querySelector('span.value').innerText = el.querySelector('input').value
       })
       el.querySelector('span.value').innerText = el.querySelector('input').value
       return el
+    },
+    prepare: (obj) => {
+      if(!obj.hasOwnProperty('configured')) {
+        obj.min = parseFloat(window.prompt('Min'))
+        obj.max = parseFloat(window.prompt('Max'))
+        obj.configured = true
+      }
+      obj.element.querySelector('span.name').innerText = obj.name
+      obj.element.querySelector('input').min = obj.min
+      obj.element.querySelector('input').max = obj.max
+      obj.element.querySelector('span.value').innerText = obj.element.querySelector('input').value
     },
     get: (obj) => {
       return parseFloat(obj.element.querySelector('input').value)
@@ -242,22 +251,19 @@ widgetTypes = {
     }
   },
   'Color Picker': {
-    init: (parent, obj) => {
-      if(!obj.hasOwnProperty('configured')) {
-        obj.min = parseFloat(window.prompt('Min'))
-        obj.max = parseFloat(window.prompt('Max'))
-        obj.configured = true
-      }
+    createElement: () => {
       var html = `
-<header><button class='delete-widget'>X</button> ${obj.name}:</header>
+<header><button class='delete-widget'>X</button> <span class="name"></span>:</header>
 <input class="jscolor {onFineChange: \'jsColorUpdate(this)\'}" value="ab2567">`
       var el = document.createElement('div')
       el.className = "color-picker widget"
       el.innerHTML = html
-      parent.appendChild(el)
-      window.jscolor.installByClassName('jscolor');
-      el.querySelector('.jscolor').jscolor.widget = obj
       return el
+    },
+    prepare: (obj) => {
+      obj.element.querySelector('span.name').innerText = obj.name
+      window.jscolor.installByClassName('jscolor');
+      obj.element.querySelector('.jscolor').jscolor.widget = obj
     },
     get: (obj) => {
       var input = obj.element.querySelector('input')
