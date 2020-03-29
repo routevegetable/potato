@@ -183,7 +183,7 @@ def reload_app():
         # Kill the running process
         global app_process
         if app_process:
-            app_process.terminate()
+            app_process.kill()
             app_process.wait()
 
 
