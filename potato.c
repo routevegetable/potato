@@ -54,9 +54,9 @@ static void s_color_decoder(void *target, char *new_value)
     color_t *target_c = target;
 
     int cint = atoi(new_value);
-    target_c->r = (cint >> 0) & 0xFF;
-    target_c->g = (cint >> 8) & 0xFF;
-    target_c->b = (cint >> 16) & 0xFF;
+    target_c->r = ((float)((cint >> 0) & 0xFF))/255.f;
+    target_c->g = ((float)((cint >> 8) & 0xFF))/255.f;
+    target_c->b = ((float)((cint >> 16) & 0xFF))/255.f;
 }
 
 void __var_set_ptr(char *name, char *type, void *ptr)
