@@ -282,6 +282,50 @@ widgetTypes = {
       var b = (value >> 16) & 0xFF;
       input.jscolor.fromRGB(r,g,b)
     }
+  },
+  'Choice': {
+    createElement: () => {
+      var html = `
+<header><button class='delete-widget'>X</button> <span class="name"></span>:</header>
+<select></select>`
+      var el = document.createElement('div')
+      el.className = "choice widget"
+      el.innerHTML = html
+      return el
+    },
+    prepare: (obj) => {
+      if(!obj.hasOwnProperty('configured')) {
+        var choiceString = window.prompt('Input list of choices, thing=number, thing=number')
+
+        obj.choices = []
+        var parts = choiceString.split(',')
+        for(var i in parts) {
+          var part = parts[i].trim()
+
+          var tuple = part.split('=')
+          var thing = tuple[0]
+          var number = parseInt(tuple[1])
+          obj.choices.push([thing, number])
+        }
+        obj.configured = true
+      }
+
+      for(var i in obj.choices) {
+        var opt = document.createElement('option')
+        opt.innerText = obj.choices[i][0]
+        opt.value = obj.choices[i][1]
+        obj.element.querySelector('select').appendChild(opt)
+      }
+
+      obj.element.querySelector('span.name').innerText = obj.name
+    },
+
+    get: (obj) => {
+      return parseInt(obj.element.querySelector('select').value)
+    },
+    set: (obj, value) => {
+      obj.element.querySelector('select').value = value
+    }
   }
 }
 
