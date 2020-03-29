@@ -11,6 +11,8 @@ DEFVAR(color_t, color);
 
 DEFVAR(int, name);
 
+DEFVAR(int, onoff);
+
 void init()
 {
 	printf("HELLO!\n");
@@ -19,5 +21,5 @@ void init()
 void work(float dt)
 {
   	printf("dt: %f position: %f velocity: %f haha: %d\n", dt, position, velocity, haha2);
-  	printf("color: %f name: %d\n", color.r, name);
+  	printf("color: %f name: %d onoff: %d\n", color.r, name, onoff);
 }

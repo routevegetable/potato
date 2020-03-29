@@ -326,7 +326,27 @@ widgetTypes = {
     set: (obj, value) => {
       obj.element.querySelector('select').value = value
     }
-  }
+  },
+  'Switch': {
+    createElement: () => {
+      var html = `
+<header><button class='delete-widget'>X</button> <span class="name"></span>:</span></header>
+<input type="checkbox">`
+      var el = document.createElement('div')
+      el.className = "switch widget"
+      el.innerHTML = html
+      return el
+    },
+    prepare: (obj) => {
+      obj.element.querySelector('span.name').innerText = obj.name
+    },
+    get: (obj) => {
+      return obj.element.querySelector('input').checked ? 1 : 0
+    },
+    set: (obj, value) => {
+      obj.element.querySelector('input').checked = (value == 1)
+    }
+  },
 }
 
 function jsColorUpdate(jscolor) {
