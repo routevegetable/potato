@@ -46,7 +46,7 @@ def send_var_block(obj):
 def save_vars():
     global prog_vars
     with open(VAR_FILE, 'w') as f:
-        json.dump(prog_vars, f)
+        json.dump(prog_vars, f, indent=4, separators=(',', ': '))
 
 def load_vars():
     global prog_vars

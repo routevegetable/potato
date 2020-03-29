@@ -23,7 +23,7 @@ body {
 }
 
 #main-container > header > img {
-    height: 1in;
+    height:0.51in;
     vertical-align: middle;
 }
 
@@ -114,73 +114,32 @@ body {
 }
 
 .widget {
-    display:inline-block;
+    display: inline-block;
     border: 1px solid black;
-    border-radius: 0.1in;
-    padding: 0.1in;
+    //border-radius: 0.1in;
+    padding: 0.04in;
     margin: 0.1in;
+    background-color: rgba(255,255,255,0.3);
+    vertical-align: top;
 }
 
-
-#widgets > header {
-    border-bottom: 1px solid black;
-    padding-left: 10px;
+.widget > header {
+    //border-bottom: 1px solid black;
+    margin-bottom:0.1in;
 }
 
-#widgets > header > button {
-    margin: 0.02in;
-    //padding:0.1in;
-    //font-weight: bold;
-
-}
-
-#widgets > header > select {
-    margin: 0.02in;
-    //padding:0.1in;
-    //font-weight: bold;
-}
-
-
-#widgets span.vertical-thing {
-    display: inline-block;
-    //height:3in;
-    vertical-align:top;
-    line-height:normal;
-}
-
-#var-table {
-    display: inline-block;
-    padding: 0.1in;
-    height: 4in;
-    width: 20%;
-    //background-color:yellow;
-    overflow-y: scroll;
-}
-
-.var-table-row {
-    border-bottom: 1px solid white;
-    margin:0.1in;
-}
-
-.var-delete-button {
-    margin:0.05in;
-    //background-color:red;
+.delete-widget {
+    color:black;
+    background-color:red;
     //border: 0;
-}
-
-.var-add-container {
-    text-align:center;
-    border:0;
+    height:0.2in;
+    width:0.2in;
     padding:0;
-}
-
-
-.var-table-name-cell {
-
-}
-
-.var-table-value-cell {
-
+    text-align: center;
+    cursor:pointer;
+    margin-bottom: 0.1in;
+    margin-right:0.1in;
+    border-radius:0.1in;
 }
 
 

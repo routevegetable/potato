@@ -6,11 +6,8 @@
 DEFVAR(float, position);
 DEFVAR(float, velocity);
 DEFVAR(int, haha2);
-
 DEFVAR(color_t, color);
-
 DEFVAR(int, name);
-
 DEFVAR(int, onoff);
 
 void init()

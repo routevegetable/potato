@@ -98,6 +98,12 @@ function addWidgetToDOM(widget) {
   widget.element = widgetType.createElement()
   document.getElementById('widgets').appendChild(widget.element)
 
+  widget.element.querySelector('.delete-widget').addEventListener('click', () => {
+    widgets = widgets.filter(w => w != widget)
+    widget.element.remove()
+    beginUploadLayout()
+  })
+
   // Post-add initialization
   widgetType.prepare(widget)
 
@@ -106,11 +112,6 @@ function addWidgetToDOM(widget) {
   })
 
 
-  widget.element.querySelector('.delete-widget').addEventListener('click', () => {
-    widgets = widgets.filter(w => w != widget)
-    widget.element.remove()
-    beginUploadLayout()
-  })
 }
 
 async function beginUpdateWidgetData() {
@@ -254,7 +255,7 @@ widgetTypes = {
     createElement: () => {
       var html = `
 <header><button class='delete-widget'>X</button> <span class="name"></span>:</header>
-<input class="jscolor {onFineChange: \'jsColorUpdate(this)\'}" value="ab2567">`
+<button class="jscolor {onFineChange: \'jsColorUpdate(this)\'}" value="ab2567">`
       var el = document.createElement('div')
       el.className = "color-picker widget"
       el.innerHTML = html
@@ -266,7 +267,7 @@ widgetTypes = {
       obj.element.querySelector('.jscolor').jscolor.widget = obj
     },
     get: (obj) => {
-      var input = obj.element.querySelector('input')
+      var input = obj.element.querySelector('button.jscolor')
       var bigint = parseInt(input.jscolor.toHEXString().slice(1,7), 16)
       var r = (bigint >> 16) & 255;
       var g = (bigint >> 8) & 255;
@@ -275,7 +276,7 @@ widgetTypes = {
     },
     set: (obj, value) => {
 
-      var input = obj.element.querySelector('input')
+      var input = obj.element.querySelector('button.jscolor')
       var bigInt = parseInt(input.jscolor.toHEXString().slice(1,7), 16)
       var r = value & 0xFF;
       var g = (value >> 8) & 0xFF;
@@ -286,7 +287,7 @@ widgetTypes = {
   'Choice': {
     createElement: () => {
       var html = `
-<header><button class='delete-widget'>X</button> <span class="name"></span>:</header>
+<header><button class='delete-widget'>x</button> <span class="name"></span>:</header>
 <select></select>`
       var el = document.createElement('div')
       el.className = "choice widget"
