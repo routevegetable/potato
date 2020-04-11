@@ -39,6 +39,10 @@ function appendCodeOutput(text, color) {
   codeOutputBox.scrollTop = codeOutputBox.scrollHeight
 }
 
+
+var arl = new AsyncRateLimiter;
+
+
 async function putVar(name, obj) {
   var resp = await fetch('/vars/' + name, {
     method: 'post',
@@ -108,9 +112,8 @@ function addWidgetToDOM(widget) {
   widgetType.prepare(widget)
 
   widget.element.addEventListener('input', () => {
-    putVar(widget.name, widgetType.get(widget))
+    arl.submit(() => putVar(widget.name, widgetType.get(widget)))
   })
-
 
 }
 
@@ -353,5 +356,42 @@ widgetTypes = {
 function jsColorUpdate(jscolor) {
   var widget = jscolor.widget
   var widgetType = widgetTypes[widget.type]
-  putVar(widget.name, widgetType.get(widget))
+  arl.submit(() => putVar(widget.name, widgetType.get(widget)));
+}
+
+
+
+
+function AsyncRateLimiter() {
+    /* Operation is in progress */
+    this.doingThing = false;
+
+    /* Next operation to do after this one */
+    this.nextFn = false;
+}
+
+AsyncRateLimiter.prototype.submit = function(fn) {
+    var instance = this;
+
+    if(!instance.doingThing) {
+        instance.doingThing = true;
+
+        function doNext() {
+            /* Do the next thing if there is one */
+            if(instance.nextFn) {
+                var p = instance.nextFn();
+                instance.nextFn = null;
+                p.then(doNext);
+            } else {
+                instance.doingThing = false;
+            }
+        }
+
+        /* Do it immediately */
+        fn().then(doNext);
+
+    } else {
+        /* Do it next, dropping whatever was there */
+        instance.nextFn = fn;
+    }
 }
