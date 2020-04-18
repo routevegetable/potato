@@ -188,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
     lineNumbers: true,
     mode: 'text/x-csrc'
   })
+  cmObj.setSize("100%", "100%");
 
   beginDownloadCode()
   beginDownloadLayout()
