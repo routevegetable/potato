@@ -121,12 +121,18 @@ function addWidgetToDOM(widget) {
   widget.element.addEventListener('input', () => {
     arl.submit(() => putVar(widget.name, widgetType.get(widget)))
   })
-
 }
+
+
 
 async function beginUpdateWidgetData() {
 
   var data = await beginDownloadJson('/vars')
+
+  /* Don't update widget data if we have an edit
+   * pending */
+  if(arl.doingThing)
+    return;
 
   for(var i in widgets) {
     var widget = widgets[i]
@@ -228,8 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Periodically update widget data
    * if there's no async edity stuff pending */
   async function backgroundUpdate() {
-    if(!arl.doingThing)
-      await beginUpdateWidgetData()
+    await beginUpdateWidgetData()
     setTimeout(backgroundUpdate, REFRESH_DELAY)
   }
   backgroundUpdate();
@@ -380,35 +385,35 @@ function jsColorUpdate(jscolor) {
 
 
 function AsyncRateLimiter() {
-    /* Operation is in progress */
-    this.doingThing = false;
+  /* Operation is in progress */
+  this.doingThing = false;
 
-    /* Next operation to do after this one */
-    this.nextFn = false;
+  /* Next operation to do after this one */
+  this.nextFn = false;
 }
 
 AsyncRateLimiter.prototype.submit = function(fn) {
-    var instance = this;
+  var instance = this;
 
-    if(!instance.doingThing) {
-        instance.doingThing = true;
+  if(!instance.doingThing) {
+    instance.doingThing = true;
 
-        function doNext() {
-            /* Do the next thing if there is one */
-            if(instance.nextFn) {
-                var p = instance.nextFn();
-                instance.nextFn = null;
-                p.then(doNext);
-            } else {
-                instance.doingThing = false;
-            }
-        }
-
-        /* Do it immediately */
-        fn().then(doNext);
-
-    } else {
-        /* Do it next, dropping whatever was there */
-        instance.nextFn = fn;
+    function doNext() {
+      /* Do the next thing if there is one */
+      if(instance.nextFn) {
+        var p = instance.nextFn();
+        instance.nextFn = null;
+        p.then(doNext);
+      } else {
+        instance.doingThing = false;
+      }
     }
+
+    /* Do it immediately */
+    fn().then(doNext);
+
+  } else {
+    /* Do it next, dropping whatever was there */
+    instance.nextFn = fn;
+  }
 }
