@@ -13,6 +13,9 @@ var cmObj;
 var UPLOAD_DELAY = 1000
 var uploadTimeout = null
 
+// 0.5 seconds between widget refreshes
+var REFRESH_DELAY = 500
+
 // List of {name: "variable name", type: "widget type", other_prop: blah, element: element, ... }
 var widgets = []
 
@@ -40,6 +43,10 @@ function appendCodeOutput(text, color) {
 }
 
 
+/* This is used to edit widgets - all widget edits'
+ * putVar calls go through here.
+ * When there's nothing pending - we can instead
+ * periodically update all the widgets */
 var arl = new AsyncRateLimiter;
 
 
@@ -217,6 +224,15 @@ document.addEventListener('DOMContentLoaded', () => {
     var name = window.prompt("Enter name of variable")
     addNewWidget(name, widgetTypeSelect.value)
   })
+
+  /* Periodically update widget data
+   * if there's no async edity stuff pending */
+  async function backgroundUpdate() {
+    if(!arl.doingThing)
+      await beginUpdateWidgetData()
+    setTimeout(backgroundUpdate, REFRESH_DELAY)
+  }
+  backgroundUpdate();
 })
 
 
