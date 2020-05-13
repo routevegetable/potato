@@ -18,14 +18,14 @@ body {
 }
 
 #main-container > header {
-    padding:10px;
+    padding:0.05in;
     background-color:  rgba(255,255,255,0.8);
     border-bottom: 1px solid black;
     overflow:auto;
 }
 
 #main-container > header > img {
-    height:0.51in;
+    height:0.7in;
     vertical-align: middle;
 }
 
@@ -39,25 +39,15 @@ body {
 
 
 #buttons {
-    //margin:0.05in;
     padding:0in;
-    //background-color: rgba(255,255,255,0.7);
-    //border-radius: 0.1in;
     display:inline-block;
     vertical-align:middle;
 }
 
 #buttons > button {
-    //background-color: rgba(128,128,128,1);
-    //font-weight:bold;
-    //border-radius: 0.1in;
     margin: 0.02in;
     padding:0.1in;
-    //border: 0px;
-    //color: rgba(0,212,255,1);
-    //color:white;
     vertical-align:middle;
-    //height:100%;
 }
 
 .icon-button {
@@ -115,14 +105,12 @@ body {
     margin:0.05in;
     padding:0in;
     background-color: rgba(255,255,255,0.7);
-    //border-radius: 0.1in;
     overflow:auto;
 }
 
 .widget {
     display: inline-block;
-    border: 1px solid black;
-    //border-radius: 0.1in;
+    border: 1px solid rgba(0,212,255,1);
     padding: 0.04in;
     margin: 0.1in;
     background-color: rgba(255,255,255,0.3);
@@ -130,22 +118,18 @@ body {
 }
 
 .widget > header {
-    //border-bottom: 1px solid black;
     margin-bottom:0.1in;
 }
 
 .delete-widget {
-    color:black;
+    color:white;
     background-color:red;
-    //border: 0;
-    height:0.2in;
-    width:0.2in;
-    padding:0;
     text-align: center;
     cursor:pointer;
     margin-bottom: 0.1in;
     margin-right:0.1in;
     border-radius:0.1in;
+    border:0;
 }
 
 
@@ -154,7 +138,6 @@ body {
     margin:0.05in;
     padding:0.1in;
     height:100%;
-    //border-radius: 0.1in;
 }
 
 #code-output {
@@ -165,5 +148,4 @@ body {
     overflow-y:scroll;
     margin:0.05in;
     padding:0.1in;
-    //border-radius: 0.1in;
 }
