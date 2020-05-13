@@ -76,7 +76,7 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
                     self.send_response(200)
                     self.send_header('Content-type', mime[0])
                     self.end_headers()
-                    shutil.copyfileobj(f, self.wfile)
+                    shutil.copyfileobj(f, self.wfile,length=16*1024*1024)
             else:
                 self.send_response(404)
                 self.send_header('Content-type', 'text/plain')
