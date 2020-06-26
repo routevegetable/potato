@@ -42,21 +42,38 @@ function appendCodeOutput(text, color) {
   codeOutputBox.scrollTop = codeOutputBox.scrollHeight
 }
 
-
-/* This is used to edit widgets - all widget edits'
- * putVar calls go through here.
- * When there's nothing pending - we can instead
- * periodically update all the widgets */
-var arl = new AsyncRateLimiter;
+var BROKER_PORT = 19001
+var mqtt;
 
 
+/* Name of widget we are currently editing */
+var editWidgetName = null;
+
+/* Value we set the widget to */
+var editWidgetTargetValue = null
+
+
+/* Upload a new var value.
+ * Freezes background updates for this widget until this value is
+ * read from the var.
+ * Any previously-frozen updates are unfrozen.
+ */
 async function putVar(name, obj) {
-  var resp = await fetch('/vars/' + name, {
-    method: 'post',
-    body: JSON.stringify(obj)
-  })
+  console.log('now editing ' + name + ', target value ' + obj)
+  editWidgetName = name;
+  editWidgetTargetValue = obj;
 
-  return await resp.json()
+  if(name != "code" && name != "layout") {
+    mqtt.send("neep/vars/" + name, JSON.stringify(obj),2,false)
+  } else {
+
+    var resp = await fetch('/vars/' + name, {
+      method: 'post',
+      body: JSON.stringify(obj)
+    })
+
+    return await resp.json()
+  }
 }
 
 async function beginUploadCode() {
@@ -119,28 +136,40 @@ function addWidgetToDOM(widget) {
   widgetType.prepare(widget)
 
   widget.element.addEventListener('input', () => {
-    arl.submit(() => putVar(widget.name, widgetType.get(widget)))
+    putVar(widget.name, widgetType.get(widget))
   })
 }
 
+function updateWidget(widget, value) {
+  var widgetType = widgetTypes[widget.type]
 
+  if(widget.name == editWidgetName) {
+    console.log('currently editing ' + widget.name + ' ignoring update')
+    /* we are currently editing this widget */
+
+    if(value == editWidgetTargetValue) {
+      console.log('now updated' + widget.name)
+
+      /* This is the result of our edit */
+      editWidgetName = null;
+      editWidgetTargetValue = null;
+    }
+
+    /* Skip this widget */
+    return;
+  }
+  widgetType.set(widget, value)
+}
 
 async function beginUpdateWidgetData() {
 
   var data = await beginDownloadJson('/vars')
 
-  /* Don't update widget data if we have an edit
-   * pending */
-  if(arl.doingThing)
-    return;
-
   for(var i in widgets) {
     var widget = widgets[i]
-    var widgetType = widgetTypes[widget.type]
-
     var value = data[widget.name]
 
-    widgetType.set(widget, value)
+    updateWidget(widget, value)
   }
 }
 
@@ -237,7 +266,38 @@ document.addEventListener('DOMContentLoaded', () => {
     await beginUpdateWidgetData()
     setTimeout(backgroundUpdate, REFRESH_DELAY)
   }
-  backgroundUpdate();
+  /* Commented out for now - we're using MQTT */
+  //backgroundUpdate();
+
+  mqtt = new Paho.MQTT.Client(location.hostname, BROKER_PORT, "WS-" + new Date().getTime())
+  mqtt.onConnectionLost = (ro) => {
+    if(ro.errorCode != 0) {
+      console.log("connection lost: " + ro.errorMessage)
+    }
+  }
+
+  mqtt.onMessageArrived = (msg) => {
+    var topicParts = msg.destinationName.split("/")
+
+    if(topicParts.length != 3)
+      return;
+
+    if(topicParts[0] != "neep" || topicParts[1] != "vars")
+      return;
+
+    var value = JSON.parse(msg.payloadString)
+    for(var i in widgets) {
+      if(widgets[i].name == topicParts[2]) {
+        updateWidget(widgets[i], value)
+        return;
+      }
+    }
+  }
+
+  function onMqttConnect() {
+    mqtt.subscribe("neep/vars/#")
+  }
+  mqtt.connect({onSuccess:onMqttConnect, userName: "test", password: "test"})
 })
 
 
@@ -378,42 +438,5 @@ widgetTypes = {
 function jsColorUpdate(jscolor) {
   var widget = jscolor.widget
   var widgetType = widgetTypes[widget.type]
-  arl.submit(() => putVar(widget.name, widgetType.get(widget)));
-}
-
-
-
-
-function AsyncRateLimiter() {
-  /* Operation is in progress */
-  this.doingThing = false;
-
-  /* Next operation to do after this one */
-  this.nextFn = false;
-}
-
-AsyncRateLimiter.prototype.submit = function(fn) {
-  var instance = this;
-
-  if(!instance.doingThing) {
-    instance.doingThing = true;
-
-    function doNext() {
-      /* Do the next thing if there is one */
-      if(instance.nextFn) {
-        var p = instance.nextFn();
-        instance.nextFn = null;
-        p.then(doNext);
-      } else {
-        instance.doingThing = false;
-      }
-    }
-
-    /* Do it immediately */
-    fn().then(doNext);
-
-  } else {
-    /* Do it next, dropping whatever was there */
-    instance.nextFn = fn;
-  }
+  putVar(widget.name, widgetType.get(widget))
 }

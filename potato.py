@@ -8,6 +8,8 @@ import subprocess
 import os
 import os.path
 import mimetypes
+import paho.mqtt.client as mqtt
+from select import select
 
 PORT = 8080
 
@@ -26,6 +28,11 @@ VAR_FILE='vars.json'
 
 # Handle for the running app, if it is indeed running
 app_process = None
+
+# MQTT broker is here
+BROKER_HOST="127.0.0.1"
+
+TOPIC_PREFIX="neep"
 
 
 def make_var_block(obj):
@@ -57,9 +64,38 @@ def load_vars():
         prog_vars = {}
 
 
+def mqtt_on_connect(client, userdata, flags, rc):
+    print('connected with result code {}'.format(rc))
+
+    client.subscribe(TOPIC_PREFIX + '/#')
+
+def mqtt_on_message(client, userdata, msg):
+
+    global sync_vars
+    global prog_vars
+
+    topic_parts = msg.topic.split('/')
+
+    if topic_parts[1] == 'vars':
+        var_name = topic_parts[2]
+
+        value = msg.payload.decode('utf-8')
+
+        prog_vars[var_name] = json.loads(value)
+
+        if var_name in sync_vars:
+            send_var_block({var_name: prog_vars[var_name]})
+
+    print(msg.topic)
+    print('payload: {}'.format(msg.payload))
+
+client = mqtt.Client()
+client.on_connect = mqtt_on_connect
+client.on_message = mqtt_on_message
+
 class RequestHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
-
+        global prog_vars
         global sync_vars
 
         if self.path == '/':
@@ -133,8 +169,10 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
         else:
             self.reply('hello from ' + self.path)
 
-
     def do_POST(self):
+        global prog_vars
+        global sync_vars
+
 
         if self.path.startswith('/vars/'):
 
@@ -149,12 +187,10 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
 
             # No point in sending the code to the process.
             # That would be awfully silly...
-            global sync_vars
             if var_name in sync_vars:
                 send_var_block({var_name: prog_vars[var_name]})
 
             self.reply(prog_vars[var_name])
-
 
     def reply(self, obj):
         self.send_response(200)
@@ -170,6 +206,7 @@ httpd = http.server.HTTPServer(('', PORT), RequestHandler)
 
 def reload_app():
     global sync_vars
+    global prog_vars
 
     with open(APP_FILE, 'w') as f:
         f.write(prog_vars['code'])
@@ -229,4 +266,27 @@ reload_app()
 # Allow clients to pull from the buffer, given a starting index.
 # In-band data starts with a ===VAR_BLOCK=== line
 # The app will send all of its 'sync vars' in here.
-httpd.serve_forever()
+
+client.connect(BROKER_HOST)
+
+httpfd = httpd.fileno()
+
+while True:
+    mqttsock = client.socket()
+
+    r,w,e = select(
+        [mqttsock, httpfd],
+        [mqttsock] if client.want_write() else [],
+        [],
+        1)
+
+    if mqttsock in r:
+        client.loop_read()
+
+    if mqttsock in w:
+        client.loop_write()
+
+    client.loop_misc()
+
+    if httpfd in r:
+        httpd.handle_request()

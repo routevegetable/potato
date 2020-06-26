@@ -24,7 +24,7 @@ def say_hello(**payload):
                 print(str(rgb))
                 #print(str(payload['timestamp']))
             
-                conn = http.client.HTTPConnection("raspberrypi:8080")
+                conn = http.client.HTTPConnection("127.0.0.1:8080")
                 conn.request("GET","/vars/col?set=" + str(int(webcolors.rgb_to_hex((rgb.blue, rgb.green, rgb.red))[1:],16)))
                 r1 = conn.getresponse()
                 conn.close()
