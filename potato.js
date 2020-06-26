@@ -59,12 +59,18 @@ var editWidgetTargetValue = null
  * Any previously-frozen updates are unfrozen.
  */
 async function putVar(name, obj) {
+
+  if(editWidgetName == name) {
+    console.log('throwing away update for ' + name)
+    return
+  }
+
   console.log('now editing ' + name + ', target value ' + obj)
   editWidgetName = name;
   editWidgetTargetValue = obj;
 
   if(name != "code" && name != "layout") {
-    mqtt.send("neep/vars/" + name, JSON.stringify(obj),2,false)
+    mqtt.send("neep/vars/" + name, JSON.stringify(obj),0,false)
   } else {
 
     var resp = await fetch('/vars/' + name, {
@@ -148,11 +154,18 @@ function updateWidget(widget, value) {
     /* we are currently editing this widget */
 
     if(value == editWidgetTargetValue) {
-      console.log('now updated' + widget.name)
+      console.log('now updated ' + widget.name)
+
 
       /* This is the result of our edit */
       editWidgetName = null;
       editWidgetTargetValue = null;
+
+      var currentValue = widgetType.get(widget)
+      if(currentValue != value) {
+        console.log('edited value again')
+        putVar(widget.name, currentValue)
+      }
     }
 
     /* Skip this widget */
