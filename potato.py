@@ -267,12 +267,17 @@ reload_app()
 # In-band data starts with a ===VAR_BLOCK=== line
 # The app will send all of its 'sync vars' in here.
 
-client.connect(BROKER_HOST)
-
 httpfd = httpd.fileno()
 
+client.connect(BROKER_HOST)
+
 while True:
+    # Reconnect crap
     mqttsock = client.socket()
+    while not mqttsock:
+        print('Reconnecting...')
+        client.connect(BROKER_HOST)
+        mqttsock = client.socket()
 
     r,w,e = select(
         [mqttsock, httpfd],
