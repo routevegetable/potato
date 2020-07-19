@@ -64,12 +64,12 @@ def load_vars():
         prog_vars = {}
 
 
-def mqtt_on_connect(client, userdata, flags, rc):
+def mqtt_on_connect(mc, userdata, flags, rc):
     print('connected with result code {}'.format(rc))
 
-    client.subscribe(TOPIC_PREFIX + '/#')
+    mc.subscribe(TOPIC_PREFIX + '/#')
 
-def mqtt_on_message(client, userdata, msg):
+def mqtt_on_message(mc, userdata, msg):
 
     global sync_vars
     global prog_vars
@@ -89,9 +89,9 @@ def mqtt_on_message(client, userdata, msg):
     print(msg.topic)
     print('payload: {}'.format(msg.payload))
 
-client = mqtt.Client()
-client.on_connect = mqtt_on_connect
-client.on_message = mqtt_on_message
+mc = mqtt.Client()
+mc.on_connect = mqtt_on_connect
+mc.on_message = mqtt_on_message
 
 class RequestHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
@@ -141,6 +141,8 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
                 prog_vars[var_name] = json.loads(value)
 
                 if var_name in sync_vars:
+                    global mc
+                    mc.publish(TOPIC_PREFIX + '/vars/' + var_name, json.dumps(prog_vars[var_name]))
                     send_var_block({var_name: prog_vars[var_name]})
 
                 self.reply(prog_vars[var_name])
@@ -273,30 +275,30 @@ httpfd = httpd.fileno()
 httpd.timeout = 0
 
 
-client.connect(BROKER_HOST)
+mc.connect(BROKER_HOST)
 
 while True:
 
     # Reconnect crap
-    mqttsock = client.socket()
+    mqttsock = mc.socket()
     while not mqttsock:
         print('Reconnecting...')
-        client.connect(BROKER_HOST)
-        mqttsock = client.socket()
+        mc.connect(BROKER_HOST)
+        mqttsock = mc.socket()
 
     r,w,e = select(
         [mqttsock, httpfd],
-        [mqttsock] if client.want_write() else [],
+        [mqttsock] if mc.want_write() else [],
         [],
         1)
 
     if mqttsock in r:
-        client.loop_read()
+        mc.loop_read()
 
     if mqttsock in w:
-        client.loop_write()
+        mc.loop_write()
 
-    client.loop_misc()
+    mc.loop_misc()
 
     if httpfd in r:
         httpd.handle_request()
