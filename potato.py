@@ -269,9 +269,14 @@ reload_app()
 
 httpfd = httpd.fileno()
 
+# Make handle_request nonblocking
+httpd.timeout = 0
+
+
 client.connect(BROKER_HOST)
 
 while True:
+
     # Reconnect crap
     mqttsock = client.socket()
     while not mqttsock:
