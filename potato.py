@@ -4,7 +4,6 @@ import http.server
 import shutil
 import json
 import urllib
-import subprocess
 import os
 import os.path
 import mimetypes
@@ -12,61 +11,19 @@ import paho.mqtt.client as mqtt
 import aioblescan as ble
 import asyncio
 import os
+import potato_app
+
 
 from select import select
 
 PORT = 8080
-
-# Dict of var(with type) -> value string
-prog_vars = {}
-
-# List of vars we want to sync
-# gleaned from parsing app.c
-sync_vars = []
-
-# C file that app lives in
-APP_FILE='app.c'
-
-# Persistent state lives here
-VAR_FILE='vars.json'
-
-# Handle for the running app, if it is indeed running
-app_process = None
 
 # MQTT broker is here
 BROKER_HOST="127.0.0.1"
 
 TOPIC_PREFIX="neep"
 
-
-def make_var_block(obj):
-    s = ''
-    for name in obj:
-        s += name + '\n'
-        s += json.dumps(obj[name]) + '\n'
-    s += '\n'
-    return s
-
-def send_var_block(obj):
-    global app_process
-    blk = make_var_block(obj)
-    print(blk)
-    app_process.stdin.write(bytes(blk, 'UTF-8'))
-    app_process.stdin.flush()
-
-def save_vars():
-    global prog_vars
-    with open(VAR_FILE, 'w') as f:
-        print('saving {}'.format(prog_vars))
-        json.dump(prog_vars, f, indent=4, separators=(',', ': '))
-
-def load_vars():
-    global prog_vars
-    if os.path.exists(VAR_FILE):
-        with open(VAR_FILE, 'r') as f:
-            prog_vars = json.load(f)
-    else:
-        prog_vars = {}
+app = potato_app.PotatoApp()
 
 
 def mqtt_on_connect(mc, userdata, flags, rc):
@@ -76,27 +33,20 @@ def mqtt_on_connect(mc, userdata, flags, rc):
 
 def mqtt_on_message(mc, userdata, msg):
 
-    global sync_vars
-    global prog_vars
+    print('mqtt {}'.format(msg.topic))
 
     topic_parts = msg.topic.split('/')
     if msg.retain:
         print('dropping retained message for {}'.format(msg.topic))
         return
 
-
     if topic_parts[1] == 'vars':
         var_name = topic_parts[2]
 
         value = msg.payload.decode('utf-8')
+        value = json.loads(value)
 
-        prog_vars[var_name] = json.loads(value)
-
-        if var_name in sync_vars:
-            send_var_block({var_name: prog_vars[var_name]})
-
-    print(msg.topic)
-    print('payload: {}'.format(msg.payload))
+        app.update_var(var_name,value)
 
 mc = mqtt.Client()
 mc.on_connect = mqtt_on_connect
@@ -104,8 +54,6 @@ mc.on_message = mqtt_on_message
 
 class RequestHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
-        global prog_vars
-        global sync_vars
 
         if self.path == '/':
             self.send_response(302)
@@ -128,7 +76,7 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
 
         elif self.path == '/vars':
-            self.reply(prog_vars)
+            self.reply(app.get_vars())
 
 
         elif self.path.startswith('/vars/'):
@@ -147,23 +95,21 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
                     delete = True
 
             if value:
-                prog_vars[var_name] = json.loads(value)
+                app.update_var(var_name, json.loads(value))
 
-                if var_name in sync_vars:
-                    global mc
-                    mc.publish(TOPIC_PREFIX + '/vars/' + var_name, json.dumps(prog_vars[var_name]))
-                    send_var_block({var_name: prog_vars[var_name]})
+                if app.is_sync_var(var_name):
+                    mc.publish(TOPIC_PREFIX + '/vars/' + var_name, value)
 
-                self.reply(prog_vars[var_name])
+                self.reply(app.get_var_value(var_name))
             elif delete:
-                del prog_vars[var_name]
+                app.remove_var(var_name)
                 self.reply(None)
             else:
-                if var_name in prog_vars:
-                    self.reply(prog_vars[var_name])
+                all_vars = app.get_vars()
+                if var_name in all_vars:
+                    self.reply(all_vars[var_name])
                 else:
                     self.reply(None)
-
 
         elif self.path == '/save':
             save_vars()
@@ -181,9 +127,6 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
             self.reply('hello from ' + self.path)
 
     def do_POST(self):
-        global prog_vars
-        global sync_vars
-
 
         if self.path.startswith('/vars/'):
 
@@ -193,15 +136,10 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
 
             value = str(self.rfile.read(int(self.headers['Content-length'])), 'UTF-8')
 
-            prog_vars[var_name] = json.loads(value)
+            value = json.loads(value)
+            app.update_var(var_name, value)
 
-
-            # No point in sending the code to the process.
-            # That would be awfully silly...
-            if var_name in sync_vars:
-                send_var_block({var_name: prog_vars[var_name]})
-
-            self.reply(prog_vars[var_name])
+            self.reply(value)
 
     def reply(self, obj):
         self.send_response(200)
@@ -215,57 +153,9 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
 httpd = http.server.HTTPServer(('', PORT), RequestHandler)
 
 
-def reload_app():
-    global sync_vars
-    global prog_vars
+app.load_vars()
 
-    with open(APP_FILE, 'w') as f:
-        f.write(prog_vars['code'])
-
-    # Rebuild
-    completed = subprocess.run(['make'],
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-
-    if completed.returncode == 0:
-        # Kill the running process
-        global app_process
-        if app_process:
-            app_process.kill()
-            app_process.wait()
-
-
-        # Find the vars we are interested in syncing
-
-        # Always sync fps
-        sync_vars = ['fps']
-        with open(APP_FILE, 'r') as f:
-            for line in f.readlines():
-                line = line.strip()
-                if line.startswith('DEFVAR('):
-                    line = line[7:].split(')')[0]
-                    parts = line.split(',')
-                    var_type = parts[0].strip()
-                    var_name = parts[1].strip()
-                    sync_vars.append(var_name)
-
-        print('sync vars: ' + str(sync_vars))
-
-
-        # Redeploy
-        app_process = subprocess.Popen(['./app'],
-                                       stdin=subprocess.PIPE)
-
-        # Start the app with the set of current vars
-        send_var_block({k:v for (k,v) in prog_vars.items() if k in sync_vars})
-
-    return completed
-
-
-
-load_vars()
-
-reload_app()
+app.reload_app()
 
 # Todo: propagate sync_vars back to here
 # Use an 'order token' var to ensure all sent messages have been
@@ -305,8 +195,6 @@ def handle_ble_packet(data):
 
     mfg_id = msd.payload[0].val
     msd_payload = msd.payload[1].val
-
-    print('mfg_id {:02X}, payload: {}'.format(mfg_id, msd_payload))
 
     if mfg_id != 0x9001:
         return
@@ -378,12 +266,11 @@ def ev_ble_read():
     print('ble read {}'.format(obj))
     for k in obj:
         v = obj[k]
-        if not k in prog_vars or not prog_vars[k] == v:
-            prog_vars[k] = v
-            print('BLE {} = {}'.format(k,v))
-            mc.publish(TOPIC_PREFIX + '/vars/' + k, json.dumps(prog_vars[k]))
-            send_var_block({k: prog_vars[k]})
 
+        current = app.get_var_value(k)
+        if not current or current != v:
+            app.update_var(k,v)
+            mc.publish(TOPIC_PREFIX + '/vars/' + k, json.dumps(v))
 
 wr_en = False
 def check_mqtt_write():
