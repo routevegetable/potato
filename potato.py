@@ -168,7 +168,6 @@ app.reload_app()
 # In-band data starts with a ===VAR_BLOCK=== line
 # The app will send all of its 'sync vars' in here.
 
-httpfd = httpd.fileno()
 
 # Make handle_request nonblocking
 httpd.timeout = 0
@@ -285,7 +284,7 @@ def check_mqtt_write():
             wr_en = False
 
 
-loop.add_reader(httpfd, lambda: httpd.handle_request())
+loop.add_reader(httpd, lambda: httpd.handle_request())
 
 loop.add_reader(rpipe, lambda: ev_ble_read())
 
