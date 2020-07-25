@@ -9,6 +9,10 @@ import os
 import os.path
 import mimetypes
 import paho.mqtt.client as mqtt
+import aioblescan as ble
+import asyncio
+import os
+
 from select import select
 
 PORT = 8080
@@ -53,6 +57,7 @@ def send_var_block(obj):
 def save_vars():
     global prog_vars
     with open(VAR_FILE, 'w') as f:
+        print('saving {}'.format(prog_vars))
         json.dump(prog_vars, f, indent=4, separators=(',', ': '))
 
 def load_vars():
@@ -75,6 +80,10 @@ def mqtt_on_message(mc, userdata, msg):
     global prog_vars
 
     topic_parts = msg.topic.split('/')
+    if msg.retain:
+        print('dropping retained message for {}'.format(msg.topic))
+        return
+
 
     if topic_parts[1] == 'vars':
         var_name = topic_parts[2]
@@ -274,31 +283,129 @@ httpfd = httpd.fileno()
 # Make handle_request nonblocking
 httpd.timeout = 0
 
-
 mc.connect(BROKER_HOST)
 
-while True:
 
+
+# Bluetooth stuff now!
+
+rpipe,wpipe = os.pipe()
+
+wpipe = os.fdopen(wpipe, 'w')
+rpipe = os.fdopen(rpipe)
+
+def handle_ble_packet(data):
+    ev = ble.HCI_Event()
+    xx = ev.decode(data)
+    msds = ev.retrieve("Manufacturer Specific Data")
+    if(len(msds) > 0):
+        msd = msds[0]
+    else:
+        return
+
+    mfg_id = msd.payload[0].val
+    msd_payload = msd.payload[1].val
+
+    print('mfg_id {:02X}, payload: {}'.format(mfg_id, msd_payload))
+
+    if mfg_id != 0x9001:
+        return
+
+    import struct
+    value = struct.unpack('i', msd_payload[2:6])[0]
+
+    rest = msd_payload[6:]
+    name = rest[:rest.index(0)].decode('utf-8')
+
+    msg = json.dumps({name: value})
+    print('BLE {}'.format(msg))
+    wpipe.write(msg + '\n')
+    wpipe.flush()
+
+
+
+
+
+
+loop = asyncio.get_event_loop()
+btsock = ble.create_bt_socket()
+fac=loop._create_connection_transport(btsock,ble.BLEScanRequester,None,None)
+
+btconn,btctl = loop.run_until_complete(fac)
+
+btctl.process = handle_ble_packet
+
+mqttsock = None
+def ensure_mqtt():
     # Reconnect crap
+    global mqttsock
+    if mqttsock:
+        if wr_en:
+            loop.remove_writer(mqttsock)
+            loop.remove_reader(mqttsock)
     mqttsock = mc.socket()
     while not mqttsock:
         print('Reconnecting...')
         mc.connect(BROKER_HOST)
         mqttsock = mc.socket()
+        loop.remove_reader(mqttsock)
+    loop.add_reader(mqttsock, ev_mqtt_read)
+    check_mqtt_write()
 
-    r,w,e = select(
-        [mqttsock, httpfd],
-        [mqttsock] if mc.want_write() else [],
-        [],
-        1)
-
-    if mqttsock in r:
-        mc.loop_read()
-
-    if mqttsock in w:
-        mc.loop_write()
-
+def ev_periodic():
+    print('mqtt periodic')
+    ensure_mqtt()
     mc.loop_misc()
+    check_mqtt_write()
+    loop.call_later(1, lambda: ev_periodic())
 
-    if httpfd in r:
-        httpd.handle_request()
+def ev_mqtt_read():
+    print('mqtt read')
+    ensure_mqtt()
+    mc.loop_read()
+    check_mqtt_write()
+
+def ev_mqtt_write():
+    print('mqtt write')
+    ensure_mqtt()
+    mc.loop_write()
+    check_mqtt_write()
+
+def ev_ble_read():
+    msg = rpipe.readline().strip()
+    obj = json.loads(msg)
+
+    print('ble read {}'.format(obj))
+    for k in obj:
+        v = obj[k]
+        if not k in prog_vars or not prog_vars[k] == v:
+            prog_vars[k] = v
+            print('BLE {} = {}'.format(k,v))
+            mc.publish(TOPIC_PREFIX + '/vars/' + k, json.dumps(prog_vars[k]))
+            send_var_block({k: prog_vars[k]})
+
+
+wr_en = False
+def check_mqtt_write():
+    global wr_en
+    if mc.want_write():
+        if not wr_en:
+            loop.add_writer(mqttsock, ev_mqtt_write)
+            wr_en = True
+    else:
+        if wr_en:
+            loop.remove_writer(mqttsock)
+            wr_en = False
+
+
+loop.add_reader(httpfd, lambda: httpd.handle_request())
+
+loop.add_reader(rpipe, lambda: ev_ble_read())
+
+loop.call_soon(ev_periodic)
+
+ensure_mqtt()
+
+btctl.send_scan_request()
+
+loop.run_forever()
