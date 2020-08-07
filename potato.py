@@ -112,12 +112,12 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
                     self.reply(None)
 
         elif self.path == '/save':
-            save_vars()
+            app.save_vars()
             self.reply(None)
 
         elif self.path == '/reload':
 
-            completed = reload_app()
+            completed = app.reload_app()
             self.reply({'returncode': completed.returncode,
                         'stdout': str(completed.stdout, 'UTF-8'),
                         'stderr': str(completed.stderr, 'UTF-8')
