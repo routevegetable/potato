@@ -32,7 +32,7 @@ DEFVAR(float, max_vel);
 
 
 #define TARGET_FREQ             WS2811_TARGET_FREQ
-#define GPIO_PIN                10
+#define GPIO_PIN                21
 #define STRIP_TYPE              WS2811_STRIP_GBR		// WS2812/SK6812RGB integrated chip+leds
 
 #define LED_COUNT               138
