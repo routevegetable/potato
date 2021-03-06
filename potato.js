@@ -52,6 +52,8 @@ var editWidgetName = null;
 /* Value we set the widget to */
 var editWidgetTargetValue = null
 
+var TOPIC_PREFIX = "neep"
+
 
 /* Upload a new var value.
  * Freezes background updates for this widget until this value is
@@ -70,7 +72,7 @@ async function putVar(name, obj) {
   editWidgetTargetValue = obj;
 
   if(name != "code" && name != "layout") {
-    mqtt.send("neep/vars/" + name, JSON.stringify(obj),0,false)
+    mqtt.send(TOPIC_PREFIX + "/vars/" + name, JSON.stringify(obj),0,false)
   } else {
 
     var resp = await fetch('/vars/' + name, {
@@ -295,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(topicParts.length != 3)
       return;
 
-    if(topicParts[0] != "neep" || topicParts[1] != "vars")
+    if(topicParts[0] != TOPIC_PREFIX || topicParts[1] != "vars")
       return;
 
     var value = JSON.parse(msg.payloadString)
@@ -308,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function onMqttConnect() {
-    mqtt.subscribe("neep/vars/#")
+    mqtt.subscribe(TOPIC_PREFIX + "/vars/#")
   }
   mqtt.connect({onSuccess:onMqttConnect, userName: "test", password: "test"})
 })
