@@ -21,6 +21,7 @@ body {
     background-color:  rgba(255,255,255,0.35);
     overflow:auto;
     height:10vh;
+    max-height:0.5in;
 }
 
 span.stretch {

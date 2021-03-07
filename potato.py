@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import http.server
+from threading import Lock
+import socketserver
 import shutil
 import json
 import urllib
@@ -49,9 +51,19 @@ mc = mqtt.Client()
 mc.on_connect = mqtt_on_connect
 mc.on_message = mqtt_on_message
 
-class RequestHandler(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
+potato_mutex = Lock()
 
+class RequestHandler(http.server.BaseHTTPRequestHandler):
+
+    def do_GET(self):
+        with potato_mutex:
+            self.do_GET_locked()
+
+    def do_POST(self):
+        with potato_mutex:
+            self.do_POST_locked()
+
+    def do_GET_locked(self):
         if self.path == '/':
             self.send_response(302)
             self.send_header('Location', '/static/index.html')
@@ -123,7 +135,7 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
         else:
             self.reply('hello from ' + self.path)
 
-    def do_POST(self):
+    def do_POST_locked(self):
 
         if self.path.startswith('/vars/'):
 
@@ -146,8 +158,10 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
         j = json.dumps(obj)
         self.wfile.write(bytes(j, 'UTF-8'))
 
+class PotatoServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
+    pass
 
-httpd = http.server.HTTPServer(('', PORT), RequestHandler)
+httpd = PotatoServer(('', PORT), RequestHandler)
 
 
 app.load_vars()
