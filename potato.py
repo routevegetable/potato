@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
 import http.server
+from threading import Lock
+import socketserver
 import shutil
 import json
 import urllib
@@ -12,9 +14,6 @@ import aioblescan as ble
 import asyncio
 import os
 import potato_app
-
-
-from select import select
 
 PORT = 8080
 
@@ -52,9 +51,19 @@ mc = mqtt.Client()
 mc.on_connect = mqtt_on_connect
 mc.on_message = mqtt_on_message
 
-class RequestHandler(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
+potato_mutex = Lock()
 
+class RequestHandler(http.server.BaseHTTPRequestHandler):
+
+    def do_GET(self):
+        with potato_mutex:
+            self.do_GET_locked()
+
+    def do_POST(self):
+        with potato_mutex:
+            self.do_POST_locked()
+
+    def do_GET_locked(self):
         if self.path == '/':
             self.send_response(302)
             self.send_header('Location', '/static/index.html')
@@ -126,7 +135,7 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
         else:
             self.reply('hello from ' + self.path)
 
-    def do_POST(self):
+    def do_POST_locked(self):
 
         if self.path.startswith('/vars/'):
 
@@ -149,8 +158,10 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
         j = json.dumps(obj)
         self.wfile.write(bytes(j, 'UTF-8'))
 
+class PotatoServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
+    pass
 
-httpd = http.server.HTTPServer(('', PORT), RequestHandler)
+httpd = PotatoServer(('', PORT), RequestHandler)
 
 
 app.load_vars()
@@ -240,20 +251,20 @@ def ensure_mqtt():
     check_mqtt_write()
 
 def ev_periodic():
-    print('mqtt periodic')
+    #print('mqtt periodic')
     ensure_mqtt()
     mc.loop_misc()
     check_mqtt_write()
     loop.call_later(1, lambda: ev_periodic())
 
 def ev_mqtt_read():
-    print('mqtt read')
+    #print('mqtt read')
     ensure_mqtt()
     mc.loop_read()
     check_mqtt_write()
 
 def ev_mqtt_write():
-    print('mqtt write')
+    #print('mqtt write')
     ensure_mqtt()
     mc.loop_write()
     check_mqtt_write()
@@ -262,7 +273,7 @@ def ev_ble_read():
     msg = rpipe.readline().strip()
     obj = json.loads(msg)
 
-    print('ble read {}'.format(obj))
+    #print('ble read {}'.format(obj))
     for k in obj:
         v = obj[k]
 

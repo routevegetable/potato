@@ -52,6 +52,8 @@ var editWidgetName = null;
 /* Value we set the widget to */
 var editWidgetTargetValue = null
 
+var TOPIC_PREFIX = "neep"
+
 
 /* Upload a new var value.
  * Freezes background updates for this widget until this value is
@@ -70,7 +72,7 @@ async function putVar(name, obj) {
   editWidgetTargetValue = obj;
 
   if(name != "code" && name != "layout") {
-    mqtt.send("neep/vars/" + name, JSON.stringify(obj),0,false)
+    mqtt.send(TOPIC_PREFIX + "/vars/" + name, JSON.stringify(obj),0,false)
   } else {
 
     var resp = await fetch('/vars/' + name, {
@@ -241,7 +243,8 @@ function addNewWidget(name, type) {
 document.addEventListener('DOMContentLoaded', () => {
   cmObj = CodeMirror(codeTextArea, {
     lineNumbers: true,
-    mode: 'text/x-csrc'
+    mode: 'text/x-csrc',
+    viewportMargin: Infinity
   })
   cmObj.setSize("100%", "100%");
 
@@ -272,6 +275,12 @@ document.addEventListener('DOMContentLoaded', () => {
     var name = window.prompt("Enter name of variable")
     addNewWidget(name, widgetTypeSelect.value)
   })
+  codeOutputBox.addEventListener('click', () => {
+    if(codeOutputBox.style.height == "")
+      codeOutputBox.style.height = "50vh"
+    else
+      codeOutputBox.style.height = "";
+  })
 
   mqtt = new Paho.MQTT.Client(location.hostname, BROKER_PORT, "WS-" + new Date().getTime())
   mqtt.onConnectionLost = (ro) => {
@@ -286,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(topicParts.length != 3)
       return;
 
-    if(topicParts[0] != "neep" || topicParts[1] != "vars")
+    if(topicParts[0] != TOPIC_PREFIX || topicParts[1] != "vars")
       return;
 
       console.log('got message for var: ' + topicParts[2])
@@ -301,8 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function onMqttConnect() {
-      mqtt.subscribe("neep/vars/#")
       console.log('mqtt connected')
+    mqtt.subscribe(TOPIC_PREFIX + "/vars/#")
   }
   mqtt.connect({onSuccess:onMqttConnect, userName: "test", password: "test"})
 })
@@ -379,7 +388,7 @@ widgetTypes = {
   'Choice': {
     createElement: () => {
       var html = `
-<header><button class='delete-widget'>x</button> <span class="name"></span>:</header>
+<header><button class='delete-widget'>X</button> <span class="name"></span>:</header>
 <select></select>`
       var el = document.createElement('div')
       el.className = "choice widget"
