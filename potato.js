@@ -273,15 +273,6 @@ document.addEventListener('DOMContentLoaded', () => {
     addNewWidget(name, widgetTypeSelect.value)
   })
 
-  /* Periodically update widget data
-   * if there's no async edity stuff pending */
-  async function backgroundUpdate() {
-    await beginUpdateWidgetData()
-    setTimeout(backgroundUpdate, REFRESH_DELAY)
-  }
-  /* Commented out for now - we're using MQTT */
-  //backgroundUpdate();
-
   mqtt = new Paho.MQTT.Client(location.hostname, BROKER_PORT, "WS-" + new Date().getTime())
   mqtt.onConnectionLost = (ro) => {
     if(ro.errorCode != 0) {
@@ -298,6 +289,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if(topicParts[0] != "neep" || topicParts[1] != "vars")
       return;
 
+      console.log('got message for var: ' + topicParts[2])
+    
     var value = JSON.parse(msg.payloadString)
     for(var i in widgets) {
       if(widgets[i].name == topicParts[2]) {
@@ -308,7 +301,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function onMqttConnect() {
-    mqtt.subscribe("neep/vars/#")
+      mqtt.subscribe("neep/vars/#")
+      console.log('mqtt connected')
   }
   mqtt.connect({onSuccess:onMqttConnect, userName: "test", password: "test"})
 })

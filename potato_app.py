@@ -91,6 +91,7 @@ class PotatoApp:
 
             print('sync vars: ' + str(self.sync_vars))
 
+            os.system('sudo setcap cap_sys_rawio+ep ./app')
 
             # Redeploy
             self.app_process = subprocess.Popen(['./app'],
