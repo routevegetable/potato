@@ -387,7 +387,7 @@ widgetTypes = {
   'Choice': {
     createElement: () => {
       var html = `
-<header><button class='delete-widget'>x</button> <span class="name"></span>:</header>
+<header><button class='delete-widget'>X</button> <span class="name"></span>:</header>
 <select></select>`
       var el = document.createElement('div')
       el.className = "choice widget"

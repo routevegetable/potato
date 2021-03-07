@@ -132,7 +132,7 @@ body {
 
 #code-text {
     background-color:white;
-    margin:0.05in;
+    //margin:0.05in;
     padding:0.1in;
     height:100%;
 }
@@ -143,6 +143,6 @@ body {
     font-family: monospace;
     height:2in;
     overflow-y:scroll;
-    margin:0.05in;
+    //margin:0.05in;
     padding:0.1in;
 }

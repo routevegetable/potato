@@ -13,9 +13,6 @@ import asyncio
 import os
 import potato_app
 
-
-from select import select
-
 PORT = 8080
 
 # MQTT broker is here
@@ -240,20 +237,20 @@ def ensure_mqtt():
     check_mqtt_write()
 
 def ev_periodic():
-    print('mqtt periodic')
+    #print('mqtt periodic')
     ensure_mqtt()
     mc.loop_misc()
     check_mqtt_write()
     loop.call_later(1, lambda: ev_periodic())
 
 def ev_mqtt_read():
-    print('mqtt read')
+    #print('mqtt read')
     ensure_mqtt()
     mc.loop_read()
     check_mqtt_write()
 
 def ev_mqtt_write():
-    print('mqtt write')
+    #print('mqtt write')
     ensure_mqtt()
     mc.loop_write()
     check_mqtt_write()
@@ -262,7 +259,7 @@ def ev_ble_read():
     msg = rpipe.readline().strip()
     obj = json.loads(msg)
 
-    print('ble read {}'.format(obj))
+    #print('ble read {}'.format(obj))
     for k in obj:
         v = obj[k]
 
