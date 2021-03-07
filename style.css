@@ -20,8 +20,14 @@ body {
     padding:0;
     background-color:  rgba(255,255,255,0.35);
     overflow:auto;
+    height:10vh;
 }
 
+span.stretch {
+    display:inline-block;
+    vertical-align:middle;
+    height:100%;
+}
 #main-container > header > img {
     height:0.5in;
     vertical-align: middle;
@@ -107,8 +113,7 @@ body {
 
 .widget {
     display: inline-block;
-    //border: 1px solid rgba(0,212,255,1);
-    padding: 0.1in;
+    padding: 0.05in;
     margin: 0.1in;
     background-color: rgba(255,255,255,0.35);
     vertical-align: top;
@@ -133,8 +138,8 @@ body {
 #code-text {
     background-color:white;
     //margin:0.05in;
-    padding:0.1in;
-    height:100%;
+    //padding:0.1in;
+    height:90vh;
 }
 
 #code-output {
@@ -145,4 +150,14 @@ body {
     overflow-y:scroll;
     //margin:0.05in;
     padding:0.1in;
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    z-index:10;
+    height:10vh;
+}
+
+.CodeMirror {
+    //height:auto !important;
 }

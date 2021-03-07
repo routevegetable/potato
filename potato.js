@@ -243,7 +243,8 @@ function addNewWidget(name, type) {
 document.addEventListener('DOMContentLoaded', () => {
   cmObj = CodeMirror(codeTextArea, {
     lineNumbers: true,
-    mode: 'text/x-csrc'
+    mode: 'text/x-csrc',
+    viewportMargin: Infinity
   })
   cmObj.setSize("100%", "100%");
 
@@ -273,6 +274,12 @@ document.addEventListener('DOMContentLoaded', () => {
   varAddButton.addEventListener('click', () => {
     var name = window.prompt("Enter name of variable")
     addNewWidget(name, widgetTypeSelect.value)
+  })
+  codeOutputBox.addEventListener('click', () => {
+    if(codeOutputBox.style.height == "")
+      codeOutputBox.style.height = "50vh"
+    else
+      codeOutputBox.style.height = "";
   })
 
   /* Periodically update widget data
