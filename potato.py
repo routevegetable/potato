@@ -303,6 +303,6 @@ loop.call_soon(ev_periodic)
 
 ensure_mqtt()
 
-btctl.send_scan_request()
+loop.run_until_complete(btctl.send_scan_request())
 
 loop.run_forever()
